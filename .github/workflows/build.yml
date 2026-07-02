@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # استفاده از نسخه پایدارتر لینوکس برای هماهنگی کامل
 
     steps:
     - name: Checkout Code
@@ -14,30 +14,33 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.10' # هماهنگ‌ترین نسخه با کیوی و بویلدوزر
 
     - name: Install System Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev
 
-    - name: Install Buildozer, Cython and Virtualenv
+    - name: Install Buildozer and Dependencies
       run: |
         pip install --upgrade pip
-        # اضافه کردن virtualenv که لینوکس گیت‌هاب به آن نیاز مبرم دارد
-        pip install buildozer cython==0.29.36 kivy==2.3.0 pillow plyer virtualenv
+        pip install "cython<3.0.0" virtualenv
+        pip install git+https://github.com/kivy/buildozer.git # نصب آخرین نسخه مستقیم از گیت‌هاب بویلدوزر
 
-    - name: Fix buildozer.spec requirements
+    - name: Configure buildozer.spec
       run: |
-        sed -i 's/requirements = .*/requirements = python3, kivy==2.3.0, plyer, pillow/g' buildozer.spec
-
+        # اصلاح مسیرهای اندروید و حذف کتابخانه‌های خراب قدیمی به صورت ریشه‌ای
+        sed -i 's/requirements = .*/requirements = python3,kivy==2.3.0,plyer,pillow/g' buildozer.spec
+        sed -i 's/# android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
+        
     - name: Build Android APK
       run: |
-        # ساختن یک متغیر مجازی برای بویلدوزر تا در محیط خام گیت‌هاب گیج نشود
+        # اجرای ایمن با اضافه کردن مسیر به محیط لینوکس
         export PATH=$PATH:~/.local/bin/
-        yes | buildozer -v android debug
-        
+        buildozer -v android debug
+
     - name: Upload APK Artifact
+      if: always() # حتی اگر ارور داد فایل لاگ رو بده تا ببینیم چشه
       uses: actions/upload-artifact@v4
       with:
         name: leprecoin-apk
