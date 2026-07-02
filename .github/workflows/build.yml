@@ -5,16 +5,22 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # استفاده از نسخه پایدارتر لینوکس برای هماهنگی کامل
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    - name: Unzip Project Files
+      run: |
+        # باز کردن خودکار فایل زیپ در سرور گیت‌هاب
+        unzip -o game.zip
+        ls -la # برای اطمینان از اینکه فایل‌ها درست باز شده‌اند
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10' # هماهنگ‌ترین نسخه با کیوی و بویلدوزر
+        python-version: '3.10'
 
     - name: Install System Dependencies
       run: |
@@ -25,22 +31,20 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install "cython<3.0.0" virtualenv
-        pip install git+https://github.com/kivy/buildozer.git # نصب آخرین نسخه مستقیم از گیت‌هاب بویلدوزر
+        pip install git+https://github.com/kivy/buildozer.git
 
     - name: Configure buildozer.spec
       run: |
-        # اصلاح مسیرهای اندروید و حذف کتابخانه‌های خراب قدیمی به صورت ریشه‌ای
         sed -i 's/requirements = .*/requirements = python3,kivy==2.3.0,plyer,pillow/g' buildozer.spec
         sed -i 's/# android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
         
     - name: Build Android APK
       run: |
-        # اجرای ایمن با اضافه کردن مسیر به محیط لینوکس
         export PATH=$PATH:~/.local/bin/
         buildozer -v android debug
 
     - name: Upload APK Artifact
-      if: always() # حتی اگر ارور داد فایل لاگ رو بده تا ببینیم چشه
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: leprecoin-apk
