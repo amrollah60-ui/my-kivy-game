@@ -21,21 +21,22 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev libbz2-dev
 
-    - name: Install Buildozer and Cython
+    - name: Install Buildozer, Cython and Virtualenv
       run: |
         pip install --upgrade pip
-        pip install buildozer cython==0.29.36 kivy==2.3.0 pillow plyer
+        # اضافه کردن virtualenv که لینوکس گیت‌هاب به آن نیاز مبرم دارد
+        pip install buildozer cython==0.29.36 kivy==2.3.0 pillow plyer virtualenv
 
     - name: Fix buildozer.spec requirements
       run: |
-        # حذف کتابخانه خراب kivmob از فایل تنظیمات برای جلوگیری از کرش
         sed -i 's/requirements = .*/requirements = python3, kivy==2.3.0, plyer, pillow/g' buildozer.spec
 
     - name: Build Android APK
       run: |
-        # پذیرفتن اتوماتیک لایسنس‌های اندروید و پخت نهایی
+        # ساختن یک متغیر مجازی برای بویلدوزر تا در محیط خام گیت‌هاب گیج نشود
+        export PATH=$PATH:~/.local/bin/
         yes | buildozer -v android debug
-
+        
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
